@@ -111,7 +111,7 @@ export class LoginRegisterationComponent {
   registerForm!: FormGroup;
   forgotForm!: FormGroup;
 
-  private apiUrl = `${environment.apiBaseUrl}/users/login`;
+  private apiUrl = `${environment.apiBaseUrl}/public/users/login`;
 
   constructor(
     private fb: FormBuilder,
