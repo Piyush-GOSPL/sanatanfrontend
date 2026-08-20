@@ -472,11 +472,8 @@ this.loadData()
       .get<any>(`${this.apiUrl}/business`)
       .pipe(
         map((response: any) => {
-          // Extract the actual business data from the nested response structure
-          const businessData = response[0]?.data || response.data || [];
-          
-          // Ensure we have an array to work with
-          const businesses = Array.isArray(businessData) ? businessData : [businessData];
+          const businessData = Array.isArray(response) ? response : response?.data ?? [];
+          const businesses = Array.isArray(businessData) ? businessData : [];
           
           return businesses.map(business =>
             this.transformBusinessFromAPIResponse(business)
@@ -488,9 +485,14 @@ this.loadData()
 
   getTemples(): Observable<any[]> {
     return this.http
-      .get<any[]>(`${this.apiUrl}/temple`)
+      .get<any>(`${this.apiUrl}/temple`)
       .pipe(
-        map((temples: any[]) => temples.map(temple => this.transformTempleFromAPIResponse(temple))),
+        map((response: any) => {
+          const temples = Array.isArray(response) ? response : response?.data ?? [];
+          return Array.isArray(temples)
+            ? temples.map(temple => this.transformTempleFromAPIResponse(temple))
+            : [];
+        }),
         catchError(this.handleError<any[]>('getTemples', []))
       );
   }
