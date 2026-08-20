@@ -135,64 +135,6 @@ interface Deity {
         </div>
       </section>
 
-      <!-- Search and Filter Section -->
-      <!-- <section class="py-8 bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div
-            class="flex flex-col md:flex-row gap-4 items-center justify-between"
-          >
-            <div class="flex-1 max-w-md">
-              <div class="relative">
-                <input
-                  type="text"
-                  [(ngModel)]="searchTerm"
-                  (input)="filterTemples()"
-                  placeholder="Search temples..."
-                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-                <div
-                  class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-                >
-                  <svg
-                    class="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex gap-4">
-              <select
-                [(ngModel)]="selectedLocation"
-                (change)="filterTemples()"
-                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                <option value="">All Locations</option>
-                <option *ngFor="let city of cities" [value]="city.name">{{ city.name }}</option>
-              </select>
-
-              <select
-                [(ngModel)]="selectedCategory"
-                (change)="filterTemples()"
-                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                <option value="">All Deities</option>
-                <option *ngFor="let deity of deities" [value]="deity.name">{{ deity.name }}</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </section> -->
-
       <!-- Loading Indicator -->
       <div *ngIf="isLoading" class="text-center py-12">
         <div class="text-6xl mb-4">⏳</div>
@@ -217,6 +159,7 @@ interface Deity {
                   [src]="temple.image"
                   [alt]="temple.name"
                   class="w-full h-48 object-cover"
+                  (error)="onImageError($event)"
                 />
                 <div
                   class="absolute top-4 right-4 bg-white rounded-full px-3 py-1 flex items-center shadow-lg"
@@ -263,12 +206,6 @@ interface Deity {
                   >
                     Visit Temple
                   </button>
-                  <!-- <button
-                    [routerLink]="['/temples/edit-temple', temple.id]"
-                    class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors"
-                  >
-                    Edit
-                  </button> -->
                   <button
                     class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                   >
@@ -325,7 +262,15 @@ export class TemplesComponent implements OnInit {
   isLoading = true;
   errorMessage = '';
 
+  // Fallback image used whenever a temple has no image, or the image fails to load
+  private readonly defaultImage =
+    'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
+
   private apiUrl = environment.apiBaseUrl;
+
+  // Root backend origin (without the /api or /api/public suffix), used to
+  // resolve relative image paths like "/temple_images/xxx.jpg" returned by the API.
+  private backendOrigin = environment.apiBaseUrl.replace(/\/api(\/public)?\/?$/, '');
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -411,10 +356,39 @@ export class TemplesComponent implements OnInit {
     });
   }
 
+  /**
+   * Resolves an image path coming from the API into a fully-qualified URL.
+   * - Empty/missing -> default placeholder
+   * - Already absolute (http/https) -> used as-is
+   * - Relative (e.g. "/temple_images/xxx.jpg") -> prefixed with the backend origin
+   */
+  private resolveImageUrl(file: string | undefined | null): string {
+    if (!file) {
+      return this.defaultImage;
+    }
+    if (/^https?:\/\//i.test(file)) {
+      return file;
+    }
+    const path = file.startsWith('/') ? file : `/${file}`;
+    return `${this.backendOrigin}${path}`;
+  }
+
+  /**
+   * Called from the template when an <img> fails to load (broken link, 404, etc.)
+   * Swaps it to the default placeholder so the UI never shows a broken image icon.
+   */
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img.src !== this.defaultImage) {
+      img.src = this.defaultImage;
+    }
+  }
+
 private transformFromAPIResponse(apiTemple: ApiTemple): Temple {
-  const image = apiTemple.images && apiTemple.images.length > 0 
-    ? apiTemple.images[0].file 
-    : 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
+  const rawImage = apiTemple.images && apiTemple.images.length > 0
+    ? apiTemple.images[0].file
+    : null;
+  const image = this.resolveImageUrl(rawImage);
 
   return {
     id: apiTemple.id,
