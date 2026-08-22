@@ -63,13 +63,15 @@ import { AuthService } from 'src/app/Auth/auth.service';
               >
                 Events
               </a>
-              <a
-                routerLink="/business/directory"
-                routerLinkActive="text-orange-600 border-b-2 border-orange-600"
-                class="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-all duration-200 border-b-2 border-transparent"
-              >
-                Business
-              </a>
+           <!--
+
+  routerLink="/business/directory"
+  routerLinkActive="text-orange-600 border-b-2 border-orange-600"
+  class="text-gray-700 hover:text-orange-600 px-3 py-2 text-sm font-medium transition-all duration-200 border-b-2 border-transparent"
+>
+  Business
+</a>
+-->
               <a
                 routerLink="/community"
                 routerLinkActive="text-orange-600 border-b-2 border-orange-600"
