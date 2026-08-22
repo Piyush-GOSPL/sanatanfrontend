@@ -961,9 +961,9 @@ async onSubmit() {
   formData.append('location', this.temple.location);
 
   // Add optional fields if they exist
-  if (this.temple.year_established) {
-    formData.append('year_established', this.temple.year_established.toString());
-  }
+if (this.temple.year_established && !isNaN(Number(this.temple.year_established))) {
+  formData.append('year_established', this.temple.year_established.toString());
+}
   if (this.temple.email) {
     formData.append('email', this.temple.email);
   }
